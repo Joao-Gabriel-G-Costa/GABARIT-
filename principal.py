@@ -4,7 +4,7 @@ import json
 import os
 import sqlite3
 
-DB_FILE = "gabarito.db"
+DB_FILE = "BANCOGABARIBOT.db"
 
 class App:
     def __init__(self, root):
@@ -27,10 +27,10 @@ class App:
         cursor = conn.cursor()
         
         cursor.execute('''
-        CREATE TABLE IF NOT EXISTS turmas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT NOT NULL,
-            materia TEXT NOT NULL
+        CREATE TABLE IF NOT EXISTS TURMA (
+            TURMA_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+            TURMA_NOME TEXT NOT NULL,
+            TURMA_MATERIA TEXT NOT NULL
         )
         ''')
         
@@ -40,66 +40,68 @@ class App:
     def carregar_turmas_db(self):
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
-        
-        cursor.execute("SELECT id, nome, materia FROM turmas ORDER BY nome")
+
+        cursor.execute("SELECT TURMA_ID, TURMA_NOME, TURMA_MATERIA FROM TURMA ORDER BY TURMA_NOME")
         rows = cursor.fetchall()
-        
+
         turmas = []
         for row in rows:
             turmas.append({
-                "id": row[0],
-                "nome": row[1],
-                "materia": row[2]
+                "TURMA_ID": row[0],
+                "TURMA_NOME": row[1],
+                "TURMA_MATERIA": row[2]
             })
-        
+
         conn.close()
         return turmas
+
     
-    def adicionar_turma_db(self, nome, materia):
+    def adicionar_turma_db(self, TURMA_NOME, TURMA_MATERIA):
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+
+        cursor.execute("INSERT INTO TURMA (TURMA_NOME, TURMA_MATERIA) VALUES (?, ?)", (TURMA_NOME, TURMA_MATERIA))
+        TURMA_ID = cursor.lastrowid
+
+        conn.commit()
+        conn.close()
+
+        return TURMA_ID
+
+    
+    def excluir_turma_db(self, TURMA_ID):
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         
-        cursor.execute("INSERT INTO turmas (nome, materia) VALUES (?, ?)", (nome, materia))
-        turma_id = cursor.lastrowid
+        cursor.execute("DELETE FROM TURMA WHERE TURMA_ID = ?", (TURMA_ID,))
         
         conn.commit()
         conn.close()
-        
-        return turma_id
     
-    def excluir_turma_db(self, turma_id):
+    def atualizar_turma_db(self, TURMA_ID, TURMA_NOME, TURMA_MATERIA):
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         
-        cursor.execute("DELETE FROM turmas WHERE id = ?", (turma_id,))
-        
-        conn.commit()
-        conn.close()
-    
-    def atualizar_turma_db(self, turma_id, nome, materia):
-        conn = sqlite3.connect(DB_FILE)
-        cursor = conn.cursor()
-        
-        cursor.execute("UPDATE turmas SET nome = ?, materia = ? WHERE id = ?", 
-                      (nome, materia, turma_id))
+        cursor.execute("UPDATE TURMA SET TURMA_NOME = ?, TURMA_MATERIA = ? WHERE TURMA_ID = ?", 
+                      (TURMA_NOME, TURMA_MATERIA, TURMA_ID))
         
         conn.commit()
         conn.close()
 
     def criar_header(self):
-        self.header = tk.Frame(self.root, bg="#4a6fa5", height=60)
+        self.header = tk.Frame(self.root, bg="#003a4d", height=60)
         self.header.pack(fill=tk.X)
 
         self.logo_label = tk.Label(self.header, text="Gabaritô", font=("Arial", 20, "bold"),
-                                   bg="#4a6fa5", fg="white")
+                                   bg="#003a4d", fg="white")
         self.logo_label.pack(side=tk.LEFT, padx=20)
 
         self.config_btn = tk.Button(self.header, text="⚙", font=("Arial", 16),
-                                    bd=0, bg="#4a6fa5", fg="white", activebackground="#3a5a8a")
+                                    bd=0, bg="#003a4d", fg="white", activebackground="#3a5a8a")
         self.config_btn.pack(side=tk.RIGHT, padx=10)
 
         self.perfil_btn = tk.Button(self.header, text="👤", font=("Arial", 16),
-                                    bd=0, bg="#4a6fa5", fg="white", activebackground="#3a5a8a")
+                                    bd=0, bg="#003a4d", fg="white", activebackground="#3a5a8a")
         self.perfil_btn.pack(side=tk.RIGHT, padx=10)
 
     def criar_tela_principal(self):
@@ -140,45 +142,99 @@ class App:
                                 font=("Arial", 16, "bold"), bg="#f0f0f0")
         titulo_label.pack(anchor=tk.W, pady=(0, 20))
 
-        lista_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
-        lista_frame.pack(fill=tk.BOTH, expand=True)
+        container = tk.Frame(self.main_frame, bg="#f0f0f0")
+        container.pack(fill=tk.BOTH, expand=True)
+
+        canvas = tk.Canvas(container, bg="#f0f0f0", highlightthickness=0)
+        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        scrollbar = tk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+        canvas.configure(yscrollcommand=scrollbar.set)
+
+        lista_frame = tk.Frame(canvas, bg="#f0f0f0")
+        canvas_window = canvas.create_window((0, 0), window=lista_frame, anchor="nw", width=canvas.winfo_width())
+        
+        self.root.update_idletasks()
+        canvas_width = container.winfo_width() - scrollbar.winfo_width()
+        canvas.itemconfig(canvas_window, width=canvas_width)
+        
+        def _on_mousewheel(event):
+            if event.num == 5 or event.delta == -120:
+                canvas.yview_scroll(1, "units")
+            elif event.num == 4 or event.delta == 120:
+                canvas.yview_scroll(-1, "units")
+
+        def on_canvas_configure(event):
+            canvas_width = event.width
+            canvas.itemconfig(canvas_window, width=canvas_width)
+            
+        canvas.bind('<Configure>', on_canvas_configure)
+        canvas.bind_all("<MouseWheel>", _on_mousewheel) 
+        
+        def on_frame_configure(event):
+            canvas.configure(scrollregion=canvas.bbox("all"))
+
+        lista_frame.bind("<Configure>", on_frame_configure)
+
+        for i in range(3):
+            lista_frame.columnconfigure(i, weight=1, uniform="column")
 
         row, col = 0, 0
         max_col = 3
+        card_width = canvas_width // max_col - 20  
 
-        for turma in self.turmas:
+        for i, turma in enumerate(self.turmas):
+            row = i // max_col
+            col = i % max_col
+            
             card = tk.Frame(lista_frame, bg="white", bd=1, relief=tk.SOLID, cursor="hand2")
-            card.grid(row=row, column=col, padx=10, pady=10, sticky="nsew")
+
+            card.grid(row=row, column=col, padx=10, pady=20, sticky="nsew")
             
-            card.bind("<Enter>", lambda e, c=card: c.configure(bg="#f0f7ff"))
-            card.bind("<Leave>", lambda e, c=card: c.configure(bg="white"))
-            card.bind("<Button-1>", lambda e, t=turma: self.abrir_tela_turma(t))
+            card.turma_data = turma
             
+            def on_enter(event):
+                widget = event.widget
+                widget.configure(bg="#f0f7ff")
+                for child in widget.winfo_children():
+                    if isinstance(child, tk.Label):
+                        child.configure(bg="#f0f7ff")
+            
+            def on_leave(event):
+                widget = event.widget
+                widget.configure(bg="white")
+                for child in widget.winfo_children():
+                    if isinstance(child, tk.Label):
+                        child.configure(bg="white")
+            
+            def on_click(event):
+                widget = event.widget
+                if hasattr(widget, 'turma_data'):
+                    self.abrir_tela_turma(widget.turma_data)
+                elif hasattr(widget.master, 'turma_data'):
+                    self.abrir_tela_turma(widget.master.turma_data)
+            
+            card.bind("<Enter>", on_enter)
+            card.bind("<Leave>", on_leave)
+            card.bind("<Button-1>", on_click)
+
             nome_label = tk.Label(card, text=turma["nome"], font=("Arial", 14, "bold"),
-                     bg="white", fg="#4a6fa5", cursor="hand2")
+                                  bg="white", fg="#4aa6ae", cursor="hand2")
             nome_label.pack(anchor=tk.W, padx=10, pady=(10, 5))
-            
+
             materia_label = tk.Label(card, text=turma["materia"], font=("Arial", 12),
-                     bg="white", fg="#555555", cursor="hand2")
+                                    bg="white", fg="#555555", cursor="hand2")
             materia_label.pack(anchor=tk.W, padx=10, pady=(0, 10))
-            
-            nome_label.bind("<Enter>", lambda e, c=card: c.configure(bg="#f0f7ff"))
-            nome_label.bind("<Leave>", lambda e, c=card: c.configure(bg="white"))
-            nome_label.bind("<Button-1>", lambda e, t=turma: self.abrir_tela_turma(t))
-            
-            materia_label.bind("<Enter>", lambda e, c=card: c.configure(bg="#f0f7ff"))
-            materia_label.bind("<Leave>", lambda e, c=card: c.configure(bg="white"))
-            materia_label.bind("<Button-1>", lambda e, t=turma: self.abrir_tela_turma(t))
 
-            col += 1
-            if col >= max_col:
-                col = 0
-                row += 1
-
-        for i in range(max_col):
-            lista_frame.columnconfigure(i, weight=1)
-        for i in range(row + 1):
-            lista_frame.rowconfigure(i, weight=1)
+            nome_label.bind("<Enter>", on_enter)
+            nome_label.bind("<Leave>", on_leave)
+            nome_label.bind("<Button-1>", on_click)
+            
+            materia_label.bind("<Enter>", on_enter)
+            materia_label.bind("<Leave>", on_leave)
+            materia_label.bind("<Button-1>", on_click)
 
 
     def abrir_tela_turma(self, turma):
@@ -199,7 +255,7 @@ class App:
         header_frame.pack(fill=tk.X, pady=(0, 20))
         
         voltar_btn = tk.Button(header_frame, text="←", font=("Arial", 16),
-                               bg="black", fg="white", bd=0, 
+                               bg="#013b50", fg="white", bd=0, 
                                activebackground="black", activeforeground="gray",
                                command=self.voltar_tela_principal)
         voltar_btn.pack(side=tk.LEFT, padx=(0, 10))
@@ -208,7 +264,7 @@ class App:
                  font=("Arial", 18, "bold"), bg="white", fg="black").pack(side=tk.LEFT)
         
         sidebar_frame = tk.Frame(self.main_frame, bg="white", bd=1, relief=tk.SOLID, width=160)
-        sidebar_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 20))
+        sidebar_frame.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 30))
         sidebar_frame.pack_propagate(False)  
         
         menu_buttons = [
@@ -219,7 +275,7 @@ class App:
         
         for texto, icone in menu_buttons:
             btn = tk.Button(sidebar_frame, text=f"{icone} {texto}",
-                          font=("Arial", 12), bg="white", fg="black",
+                          font=("Arial", 12), bg="#2e828f", fg="white",
                           bd=1, relief=tk.SOLID, anchor=tk.W,
                           activebackground="#333", activeforeground="white")
             btn.pack(fill=tk.X, pady=5, padx=2)
@@ -289,21 +345,21 @@ class App:
                   bg="#4a6fa5", fg="white", width=10, command=self.adicionar_turma).pack(side=tk.LEFT)
 
     def adicionar_turma(self):
-        nome = self.nome_entry.get().strip()
-        materia = self.materia_entry.get().strip()
+        TURMA_NOME = self.nome_entry.get().strip()
+        TURMA_MATERIA = self.materia_entry.get().strip()
 
-        if not nome or not materia:
+        if not TURMA_NOME or not TURMA_MATERIA:
             messagebox.showwarning("Aviso", "Por favor, preencha todos os campos!")
             return
 
-        for turma in self.turmas:
-            if turma["nome"].lower() == nome.lower():
+        for TURMA in self.turmas:
+            if TURMA["nome"].lower() == TURMA_NOME.lower():
                 messagebox.showwarning("Duplicado", "Essa turma já foi cadastrada!")
                 return
 
-        turma_id = self.adicionar_turma_db(nome, materia)
+        TURMA_ID = self.adicionar_turma_db(TURMA_NOME, TURMA_MATERIA)
         
-        self.turmas.append({"id": turma_id, "nome": nome, "materia": materia})
+        self.turmas.append({"id": TURMA_ID, "nome": TURMA_NOME, "materia": TURMA_MATERIA})
         
         self.voltar_tela_principal()
 
@@ -381,9 +437,3 @@ class App:
     def voltar_tela_principal(self):
         self.root.configure(bg="#f0f0f0")
         self.criar_tela_principal()
-
-
-if __name__ == "__main__":
-    root = tk.Tk()
-    app = App(root)
-    root.mainloop()

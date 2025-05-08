@@ -15,7 +15,7 @@ class Login(ctk.CTkFrame):
         self.frame_direita = ctk.CTkFrame(self, width=300)
         self.frame_direita.pack(side="right", fill="both", expand=True)
 
-        caminho_imagem = Path("C:/Users/joaocosta/Documents/GABARIBOTPY/GABARIBOT/Gabaribot.png") #alterar foto principal
+        caminho_imagem = Path("C:/Users/Win10/Documents/GitHub/GABARIT-/Gabaribot.png") #alterar foto principal
         
         try:
             self.imagem = Image.open(caminho_imagem)  
@@ -72,7 +72,7 @@ class Login(ctk.CTkFrame):
         self.mensagem.pack()
 
     def verificaSenha(self):
-        from frames import Principal
+        from principal import App
         usuario = self.usuario.get()
         senha = self.senha.get()
         try:
@@ -86,7 +86,7 @@ class Login(ctk.CTkFrame):
 
             if resultado and resultado[0] == senha:
                 self.master.current_user = usuario  
-                self.master.switch_frame(Principal)
+                self.master.switch_frame(App)
             else:
                 self.mensagem.configure(text="Erro na autenticação")
         except sqlite3.Error as err:
