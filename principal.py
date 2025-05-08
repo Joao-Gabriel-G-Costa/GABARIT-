@@ -122,12 +122,16 @@ class App:
             self.criar_tela_sem_turmas()
         else:
             self.exibir_lista_turmas()
+            self.adicionar_turma_botao()
 
+    def adicionar_turma_botao(self):
+        if self.button_frame:
+            self.button_frame.destroy()
         self.button_frame = tk.Frame(self.root, bg="#f0f0f0")
         self.button_frame.pack(fill=tk.X, padx=20, pady=10)
 
         self.add_btn = tk.Button(self.button_frame, text="+", font=("Arial", 20),
-                          bg="#4a6fa5", fg="white", activebackground="#3a5a8a",
+                          bg="#4a6fa5", fg="black", activebackground="#3a5a8a",
                           bd=0, width=2, height=1, command=self.abrir_tela_cadastro)
         self.add_btn.pack(side=tk.RIGHT)
 
@@ -222,11 +226,11 @@ class App:
             card.bind("<Leave>", on_leave)
             card.bind("<Button-1>", on_click)
 
-            nome_label = tk.Label(card, text=turma["nome"], font=("Arial", 14, "bold"),
+            nome_label = tk.Label(card, text=turma["TURMA_NOME"], font=("Arial", 14, "bold"),
                                   bg="white", fg="#4aa6ae", cursor="hand2")
             nome_label.pack(anchor=tk.W, padx=10, pady=(10, 5))
 
-            materia_label = tk.Label(card, text=turma["materia"], font=("Arial", 12),
+            materia_label = tk.Label(card, text=turma["TURMA_MATERIA"], font=("Arial", 12),
                                     bg="white", fg="#555555", cursor="hand2")
             materia_label.pack(anchor=tk.W, padx=10, pady=(0, 10))
 
@@ -262,7 +266,7 @@ class App:
                                command=self.voltar_tela_principal)
         voltar_btn.pack(side=tk.LEFT, padx=(0, 10))
         
-        tk.Label(header_frame, text=turma["nome"], 
+        tk.Label(header_frame, text=turma["TURMA_NOME"], 
                  font=("Arial", 18, "bold"), bg="white", fg="black").pack(side=tk.LEFT)
         
         sidebar_frame = tk.Frame(self.main_frame, bg="white", bd=1, relief=tk.SOLID, width=160)
@@ -272,9 +276,17 @@ class App:
         menu_buttons = [
             ("Alunos", "👥"),
             ("Desempenho", "✓"),
-            ("Provas", "📝")
+            ("Provas", "📝"),
+            ("Editar", "✏️"),
+            ("Excluir", "❌")
         ]
         
+        for texto, icone in menu_buttons:
+            if texto == "Editar":
+                command=lambda: self.abrir_tela_editar_turma(turma)
+            elif texto == "Excluir":
+                cmd = lambda t=turma: self.confirmar_exclusao_turma(t)
+
         for texto, icone in menu_buttons:
             btn = tk.Button(sidebar_frame, text=f"{icone} {texto}",
                           font=("Arial", 12), bg="#2e828f", fg="white",
@@ -288,22 +300,22 @@ class App:
         content_header = tk.Frame(content_frame, bg="white")
         content_header.pack(fill=tk.X, pady=(0, 20))
         
-        tk.Label(content_header, text=f" {turma['materia']}", 
+        tk.Label(content_header, text=f" {turma['TURMA_MATERIA']}", 
                  font=("Arial", 14, "bold"), bg="white", fg="black").pack(side=tk.LEFT)
         
         options_frame = tk.Frame(content_frame, bg="white")
         options_frame.pack(fill=tk.X, pady=10)
         
-        editar_btn = tk.Button(options_frame, text="Editar Turma", 
-                             font=("Arial", 11), bg="#333", fg="white",
-                             activebackground="#555", activeforeground="white",
-                             command=lambda: self.abrir_tela_editar_turma(turma))
-        editar_btn.pack(side=tk.LEFT, padx=(0, 10))
+        # editar_btn = tk.Button(options_frame, text="Editar Turma", 
+        #                      font=("Arial", 11), bg="#333", fg="white",
+        #                      activebackground="#555", activeforeground="white",
+        #                      command=lambda: self.abrir_tela_editar_turma(turma))
+        # editar_btn.pack(side=tk.LEFT, padx=(0, 10))
         
-        excluir_btn = tk.Button(options_frame, text="Excluir Turma", 
-                              font=("Arial", 11), bg="#333", fg="white",
-                              activebackground="#555", activeforeground="white",
-                              command=lambda: self.confirmar_exclusao_turma(turma))
+        # excluir_btn = tk.Button(options_frame, text="Excluir Turma", 
+        #                       font=("Arial", 11), bg="#333", fg="white",
+        #                       activebackground="#555", activeforeground="white",
+        #                       command=lambda: self.confirmar_exclusao_turma(turma))
         excluir_btn.pack(side=tk.LEFT)
         
         content_main = tk.Frame(content_frame, bg="white")
@@ -355,13 +367,13 @@ class App:
             return
 
         for TURMA in self.turmas:
-            if TURMA["nome"].lower() == TURMA_NOME.lower():
+            if TURMA["TURMA_NOME"].lower() == TURMA_NOME.lower():
                 messagebox.showwarning("Duplicado", "Essa turma já foi cadastrada!")
                 return
 
         TURMA_ID = self.adicionar_turma_db(TURMA_NOME, TURMA_MATERIA)
         
-        self.turmas.append({"id": TURMA_ID, "nome": TURMA_NOME, "materia": TURMA_MATERIA})
+        self.turmas.append({"TURMA_ID": TURMA_ID, "TURMA_NOME": TURMA_NOME, "TURMA_MATERIA": TURMA_MATERIA})
         
         self.voltar_tela_principal()
 
@@ -415,24 +427,24 @@ class App:
             return
 
         for t in self.turmas:
-            if t["nome"].lower() == nome.lower() and t["id"] != turma["id"]:
+            if t["TURMA_NOME"].lower() == nome.lower() and t["TURMA_ID"] != turma["TURMA_ID"]:
                 messagebox.showwarning("Duplicado", "Já existe outra turma com este nome!")
                 return
 
-        self.atualizar_turma_db(turma["id"], nome, materia)
+        self.atualizar_turma_db(turma["TURMA_ID"], nome, materia)
         
-        turma["nome"] = nome
-        turma["materia"] = materia
+        turma["TURMA_NOME"] = nome
+        turma["TURMA_MATERIA"] = materia
         
         self.abrir_tela_turma(turma)
 
     def confirmar_exclusao_turma(self, turma):
         resposta = messagebox.askyesno("Confirmação", 
-                                       f"Tem certeza que deseja excluir a turma '{turma['nome']}'?")
+                                       f"Tem certeza que deseja excluir a turma '{turma['TURMA_NOME']}'?")
         if resposta:
-            self.excluir_turma_db(turma["id"])
+            self.excluir_turma_db(turma["TURMA_ID"])
             
-            self.turmas = [t for t in self.turmas if t["id"] != turma["id"]]
+            self.turmas = [t for t in self.turmas if t["TURMA_ID"] != turma["TURMA_ID"]]
             
             self.voltar_tela_principal()
 
