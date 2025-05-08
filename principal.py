@@ -26,13 +26,15 @@ class App:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
         
-        cursor.execute('''
-        CREATE TABLE IF NOT EXISTS TURMA (
-            TURMA_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-            TURMA_NOME TEXT NOT NULL,
-            TURMA_MATERIA TEXT NOT NULL
-        )
-        ''')
+        # cursor.execute('''
+        # CREATE TABLE IF NOT EXISTS TURMA (
+        #     TURMA_ID INTEGER PRIMARY KEY AUTOINCREMENT,
+        #     TURMA_NOME TEXT NOT NULL,
+        #     TURMA_MATERIA TEXT NOT NULL
+        # )
+        # ''')
+        # nao precisa mais disso o banco já existe vou deixar comentado só pra ficar mais 
+        # facil de entender o que eu fiz
         
         conn.commit()
         conn.close()

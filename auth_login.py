@@ -1,5 +1,5 @@
 import customtkinter as ctk
-from conecta import *  # Certifique-se de ter a função de conexão com o SQLite
+from conecta import *  
 from PIL import Image, ImageTk
 from pathlib import Path
 import sqlite3
