@@ -57,6 +57,17 @@ class App:
         conn.close()
         return turmas
 
+    def adicionar_aluno_db(self, ALUN_NOME, ALUN_CPF):
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+
+        cursor.execute("INSERT INTO ALUNO (ALUN_NOME, ALUN_CPF) VALUES (?, ?)", (ALUN_NOME, ALUN_CPF))
+        TURMA_ID = cursor.lastrowid
+
+        conn.commit()
+        conn.close()
+
+        return TURMA_ID
     
     def adicionar_turma_db(self, TURMA_NOME, TURMA_MATERIA):
         conn = sqlite3.connect(DB_FILE)
@@ -283,15 +294,21 @@ class App:
         
         for texto, icone in menu_buttons:
             if texto == "Editar":
-                command=lambda: self.abrir_tela_editar_turma(turma)
+                command = lambda t=turma: self.abrir_tela_editar_turma(t)
             elif texto == "Excluir":
-                cmd = lambda t=turma: self.confirmar_exclusao_turma(t)
+                command = lambda t=turma: self.confirmar_exclusao_turma(t)
+            elif texto == "Alunos":
+                command = lambda t=turma: self.cadastro_de_alunos(t)
+            elif texto == "Desempenho":
+                command = lambda t=turma: self.confirmar_exclusao_turma(t)
+            elif texto == "Provas":
+                command = lambda t=turma: self.confirmar_exclusao_turma(t)  
 
-        for texto, icone in menu_buttons:
             btn = tk.Button(sidebar_frame, text=f"{icone} {texto}",
-                          font=("Arial", 12), bg="#2e828f", fg="white",
-                          bd=1, relief=tk.SOLID, anchor=tk.W,
-                          activebackground="#333", activeforeground="white")
+                            font=("Arial", 12), bg="#2e828f", fg="white",
+                            bd=1, relief=tk.SOLID, anchor=tk.W,
+                            activebackground="#333", activeforeground="white",
+                            command=command)
             btn.pack(fill=tk.X, pady=5, padx=2)
         
         content_frame = tk.Frame(self.main_frame, bg="white")
@@ -358,6 +375,62 @@ class App:
         tk.Button(button_frame, text="Adicionar", font=("Arial", 12),
                   bg="#4a6fa5", fg="white", width=10, command=self.adicionar_turma).pack(side=tk.LEFT)
 
+    def cadastro_de_alunos(self, turma):
+        if hasattr(self, 'main_frame'):
+            self.main_frame.destroy()
+            
+        if self.button_frame:
+            self.button_frame.destroy()
+            
+        self.root.configure(bg="#f0f0f0")
+
+        self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        tk.Label(self.main_frame, text="Cadastra alunos",
+                 font=("Arial", 18, "bold"), bg="#f0f0f0").pack(anchor=tk.W, pady=(0, 30))
+
+        form_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=50)
+
+        tk.Label(form_frame, text="Nome do aluno", font=("Arial", 12),
+                 bg="#f0f0f0").pack(anchor=tk.W)
+        self.nome_aluno_entry = tk.Entry(form_frame, font=("Arial", 12))
+        self.nome_aluno_entry.pack(anchor=tk.W, pady=(0, 20), fill=tk.X)
+
+        tk.Label(form_frame, text="CPF:", font=("Arial", 12),
+                 bg="#f0f0f0").pack(anchor=tk.W)
+        self.cpf_entry = tk.Entry(form_frame, font=("Arial", 12))
+        self.cpf_entry.pack(anchor=tk.W, pady=(0, 30), fill=tk.X)
+
+        button_frame = tk.Frame(form_frame, bg="#f0f0f0")
+        button_frame.pack(fill=tk.X, pady=20)
+
+        tk.Button(button_frame, text="Cancelar", font=("Arial", 12),
+                  bg="#f0f0f0", width=10, command=self.voltar_tela_principal).pack(side=tk.LEFT, padx=(0, 10))
+
+        tk.Button(button_frame, text="Adicionar", font=("Arial", 12),
+                  bg="#4a6fa5", fg="white", width=10, command=self.adicionar_aluno).pack(side=tk.LEFT)
+
+    def adicionar_aluno(self):
+        ALUN_NOME = self.nome_aluno_entry.get().strip()
+        ALUN_CPF = self.cpf_entry.get().strip()
+
+        if not ALUN_NOME or not ALUN_CPF:
+            messagebox.showwarning("Aviso", "Por favor, preencha todos os campos!")
+            return
+
+        for ALUNO in self.alunos:
+            if ALUNO["ALUN_NOME"].lower() == ALUN_NOME.lower():
+                messagebox.showwarning("Duplicado", "Essa turma já foi cadastrada!")
+                return
+
+        ALUN_ID = self.adicionar_aluno_db(ALUN_NOME, ALUN_CPF)
+        
+        self.alunos.append({"ALUN_ID": ALUN_ID, "ALUN_NOME": ALUN_NOME, "ALUN_CPF": ALUN_CPF})
+        
+        self.voltar_tela_principal()
+    
     def adicionar_turma(self):
         TURMA_NOME = self.nome_entry.get().strip()
         TURMA_MATERIA = self.materia_entry.get().strip()
@@ -398,13 +471,13 @@ class App:
         tk.Label(form_frame, text="Nome da Turma:", font=("Arial", 12),
                  bg="#f0f0f0").pack(anchor=tk.W)
         self.nome_entry = tk.Entry(form_frame, font=("Arial", 12))
-        self.nome_entry.insert(0, turma["nome"])
+        self.nome_entry.insert(0, turma["TURMA_NOME"])
         self.nome_entry.pack(anchor=tk.W, pady=(0, 20), fill=tk.X)
 
         tk.Label(form_frame, text="Matéria:", font=("Arial", 12),
                  bg="#f0f0f0").pack(anchor=tk.W)
         self.materia_entry = tk.Entry(form_frame, font=("Arial", 12))
-        self.materia_entry.insert(0, turma["materia"])
+        self.materia_entry.insert(0, turma["TURMA_MATERIA"])
         self.materia_entry.pack(anchor=tk.W, pady=(0, 30), fill=tk.X)
 
         button_frame = tk.Frame(form_frame, bg="#f0f0f0")
