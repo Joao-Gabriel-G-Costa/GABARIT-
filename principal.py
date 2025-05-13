@@ -21,7 +21,6 @@ class App:
         self.current_turma = None 
         self.criar_header()
         self.criar_tela_principal()
-        self.cadastro_de_alunos()
         self.alunos = []
         
 
@@ -64,7 +63,7 @@ class App:
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
 
-        cursor.execute("SELECT ALUN_MATRICULA, ALUN_NOME, ALUN_CPF FROM TURMA ORDER BY ALUN_NOME")
+        cursor.execute("SELECT ALUN_MATRICULA, ALUN_NOME, ALUN_CPF FROM ALUNO ORDER BY ALUN_NOME")
         rows = cursor.fetchall()
 
         alunos = []
@@ -176,19 +175,19 @@ class App:
     def criar_tela_alunos(self):
         if hasattr(self, 'main_frame'):
             self.main_frame.destroy()
-        
+
         if self.button_frame:
             self.button_frame.destroy()
 
         self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
         self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        self.turmas = self.carregar_alunos_db()
+        self.alunos = self.carregar_alunos_db()
 
-        if not self.turmas:
+        if not self.alunos:
             self.criar_tela_sem_alunos()
         else:
-            self.exibir_lista_alunos()
+            self.cadastro_de_alunos()
             self.adicionar_aluno_botao()
 
     def adicionar_turma_botao(self):
@@ -221,28 +220,10 @@ class App:
                              font=("Arial", 16), bg="#f0f0f0", fg="#555555")
         msg_label.pack(pady=20)
 
-    def exibir_lista_alunos(self):
-        titulo_label = tk.Label(self.main_frame, text="Alunos",
-                                font=("Arial", 16, "bold"), bg="#f0f0f0")
-        titulo_label.pack(anchor=tk.W, pady=(0, 20))
+    def limpar_main_frame(self):
+        for widget in self.main_frame.winfo_children():
+            widget.destroy()
 
-        container = tk.Frame(self.main_frame, bg="#f0f0f0")
-        container.pack(fill=tk.BOTH, expand=True)
-
-        canvas = tk.Canvas(container, bg="#f0f0f0", highlightthickness=0)
-        canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-
-        scrollbar = tk.Scrollbar(container, orient=tk.VERTICAL, command=canvas.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-
-        canvas.configure(yscrollcommand=scrollbar.set)
-
-        lista_frame = tk.Frame(canvas, bg="#f0f0f0")
-        canvas_window = canvas.create_window((0, 0), window=lista_frame, anchor="nw", width=canvas.winfo_width())
-        
-        self.root.update_idletasks()
-        canvas_width = container.winfo_width() - scrollbar.winfo_width()
-        canvas.itemconfig(canvas_window, width=canvas_width)
 
     def exibir_lista_turmas(self):
         titulo_label = tk.Label(self.main_frame, text="Minhas Turmas",
@@ -387,8 +368,8 @@ class App:
                 command = lambda t=turma: self.abrir_tela_editar_turma(t)
             elif texto == "Excluir":
                 command = lambda t=turma: self.confirmar_exclusao_turma(t)
-            elif texto == "Alunos":
-                command = lambda t=turma: self.exibir_lista_alunos(t)
+            elif texto == "Alunos": 
+                command = lambda t=turma: self.cadastro_de_alunos(t)
             elif texto == "Desempenho":
                 command = lambda t=turma: self.confirmar_exclusao_turma(t)
             elif texto == "Provas":
@@ -465,42 +446,63 @@ class App:
         tk.Button(button_frame, text="Adicionar", font=("Arial", 12),
                   bg="#4a6fa5", fg="white", width=10, command=self.adicionar_turma).pack(side=tk.LEFT)
 
-    def cadastro_de_alunos(self, turma):
+    def cadastro_de_alunos(self, turma=None):
         if hasattr(self, 'main_frame'):
             self.main_frame.destroy()
-            
+
         if self.button_frame:
             self.button_frame.destroy()
-            
-        self.root.configure(bg="#f0f0f0")
-        
-        self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        tk.Label(self.main_frame, text="Cadastra alunos",
-                 font=("Arial", 18, "bold"), bg="#f0f0f0").pack(anchor=tk.W, pady=(0, 30))
+            self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
+            self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-        form_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=50)
+            frame = tk.Frame(self.main_frame, bg="white", bd=2, relief=tk.GROOVE)
+            frame.pack(pady=20, padx=20)
 
-        tk.Label(form_frame, text="Nome do aluno", font=("Arial", 12),
-                 bg="#f0f0f0").pack(anchor=tk.W)
-        self.nome_aluno_entry = tk.Entry(form_frame, font=("Arial", 12))
-        self.nome_aluno_entry.pack(anchor=tk.W, pady=(0, 20), fill=tk.X)
+            titulo = tk.Label(frame, text="Cadastro de Aluno", font=("Arial", 16, "bold"), bg="white")
+            titulo.grid(row=0, column=0, columnspan=2, pady=10)
 
-        tk.Label(form_frame, text="CPF:", font=("Arial", 12),
-                 bg="#f0f0f0").pack(anchor=tk.W)
-        self.cpf_entry = tk.Entry(form_frame, font=("Arial", 12))
-        self.cpf_entry.pack(anchor=tk.W, pady=(0, 30), fill=tk.X)
+            lbl_nome = tk.Label(frame, text="Nome:", font=("Arial", 12), bg="white")
+            lbl_nome.grid(row=2, column=0, padx=10, pady=5, sticky=tk.E)
+            self.entry_nome = tk.Entry(frame, font=("Arial", 12))
+            self.entry_nome.grid(row=2, column=1, padx=10, pady=5)
 
-        button_frame = tk.Frame(form_frame, bg="#f0f0f0")
-        button_frame.pack(fill=tk.X, pady=20)
+            lbl_cpf = tk.Label(frame, text="CPF:", font=("Arial", 12), bg="white")
+            lbl_cpf.grid(row=3, column=0, padx=10, pady=5, sticky=tk.E)
+            self.entry_cpf = tk.Entry(frame, font=("Arial", 12))
+            self.entry_cpf.grid(row=3, column=1, padx=10, pady=5)
 
-        tk.Button(button_frame, text="Cancelar", font=("Arial", 12),
-                  bg="#f0f0f0", width=10, command=self.voltar_tela_principal).pack(side=tk.LEFT, padx=(0, 10))
+            btn_salvar = tk.Button(frame, text="Salvar", font=("Arial", 12), bg="#4CAF50", fg="white",
+                                command=self.salvar_aluno)
+            btn_salvar.grid(row=4, column=0, padx=10, pady=20)
 
-        tk.Button(button_frame, text="Adicionar", font=("Arial", 12),
-                  bg="#4a6fa5", fg="white", width=10, command=self.adicionar_aluno).pack(side=tk.LEFT)
+            btn_cancelar = tk.Button(frame, text="Voltar", font=("Arial", 12), bg="#f44336", fg="white",
+                                    command=self.voltar_tela_principal)
+            btn_cancelar.grid(row=4, column=1, padx=10, pady=20)
+
+    def salvar_aluno(self):
+        nome = self.entry_nome.get().strip()
+        cpf = self.entry_cpf.get().strip()
+
+        if not nome or not cpf:
+            messagebox.showwarning("Aviso", "Todos os campos são obrigatórios.")
+            return
+
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("INSERT INTO ALUNO (ALUN_NOME, ALUN_CPF) VALUES (?, ?)",
+                        (nome, cpf))
+            conn.commit()
+            messagebox.showinfo("Sucesso", "Aluno cadastrado com sucesso!")
+            self.criar_tela_alunos()
+        except sqlite3.IntegrityError:
+            messagebox.showerror("Erro", "Já existe um aluno com essa matrícula ou CPF.")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
+        finally:
+            conn.close()
 
     def adicionar_aluno(self):
         ALUN_NOME = self.nome_aluno_entry.get().strip()
