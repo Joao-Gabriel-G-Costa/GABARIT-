@@ -22,7 +22,52 @@ class App:
         self.criar_header()
         self.criar_tela_principal()
         self.alunos = []
-        
+        self.nova_janela
+
+    def mostrar_alunos(self, turma):
+            if hasattr(self, 'main_frame'):
+                self.main_frame.destroy()
+            if self.button_frame:
+                self.button_frame.destroy()
+
+            self.root.configure(bg="white")
+
+            self.main_frame = tk.Frame(self.root, bg="white")
+            self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+            header = tk.Frame(self.main_frame, bg="white")
+            header.pack(fill=tk.X)
+
+            voltar_btn = tk.Button(header, text="← Voltar", font=("Arial", 12),
+                                command=lambda: self.abrir_tela_turma(turma),
+                                bg="#013b50", fg="white")
+            voltar_btn.pack(side=tk.LEFT)
+
+            tk.Label(header, text=f"Alunos da Turma: {turma['TURMA_NOME']}",
+                    font=("Arial", 16, "bold"), bg="white").pack(side=tk.LEFT, padx=10)
+
+            alunos = self.carregar_alunos_db()
+
+            if not alunos:
+                self.criar_tela_sem_alunos()
+            else:
+                for aluno in alunos:
+                    frame = tk.Frame(self.main_frame, bg="#e0e0e0", bd=1, relief=tk.SOLID, padx=10, pady=5)
+                    frame.pack(fill=tk.X, pady=5)
+
+                    nome_label = tk.Label(frame, text=aluno["ALUN_NOME"], font=("Arial", 12), bg="#e0e0e0")
+                    nome_label.pack(side=tk.LEFT)
+
+                    cpf_label = tk.Label(frame, text=f"CPF: {aluno['ALUN_CPF']}", font=("Arial", 10), bg="#e0e0e0")
+                    cpf_label.pack(side=tk.LEFT, padx=10)
+
+                    editar_btn = tk.Button(frame, text="✏️", command=lambda a=aluno: self.abrir_tela_cadastro_aluno(a, turma))
+                    editar_btn.pack(side=tk.RIGHT, padx=5)
+
+                    excluir_btn = tk.Button(frame, text="🗑️", command=lambda a=aluno: self.excluir_aluno_e_atualizar(a["ALUN_MATRICULA"], turma))
+                    excluir_btn.pack(side=tk.RIGHT, padx=5)
+
+            self.adicionar_aluno_botao() 
 
     def inicializar_db(self):
         conn = sqlite3.connect(DB_FILE)
@@ -116,6 +161,15 @@ class App:
         cursor = conn.cursor()
         
         cursor.execute("DELETE FROM TURMA WHERE TURMA_ID = ?", (TURMA_ID,))
+        
+        conn.commit()
+        conn.close()
+
+    def excluir_aluno_db(self, ALUN_MATRICULA):
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+        
+        cursor.execute("DELETE FROM ALUNO WHERE ALUN_MATRICULA = ?", (ALUN_MATRICULA,))
         
         conn.commit()
         conn.close()
@@ -369,7 +423,7 @@ class App:
             elif texto == "Excluir":
                 command = lambda t=turma: self.confirmar_exclusao_turma(t)
             elif texto == "Alunos": 
-                command = lambda t=turma: self.cadastro_de_alunos(t)
+                command = lambda t=turma: self.mostrar_alunos(t)
             elif texto == "Desempenho":
                 command = lambda t=turma: self.confirmar_exclusao_turma(t)
             elif texto == "Provas":
@@ -404,48 +458,44 @@ class App:
         #                       font=("Arial", 11), bg="#333", fg="white",
         #                       activebackground="#555", activeforeground="white",
         #                       command=lambda: self.confirmar_exclusao_turma(turma))
-        excluir_btn.pack(side=tk.LEFT)
+        self.excluir_btn.pack(side=tk.LEFT)
         
         content_main = tk.Frame(content_frame, bg="white")
         content_main.pack(fill=tk.BOTH, expand=True, pady=20)
 
-    def abrir_tela_cadastro(self):
-        if hasattr(self, 'main_frame'):
-            self.main_frame.destroy()
+    def abrir_tela_cadastro_aluno(self, aluno=None, turma=None):
+        nova_janela = tk.Toplevel(self.root)
+        nova_janela.title("Cadastrar Aluno" if not aluno else "Editar Aluno")
+
+        tk.Label(nova_janela, text="Nome do Aluno:").pack()
+        nome_entry = tk.Entry(nova_janela)
+        nome_entry.pack()
+
+        tk.Label(nova_janela, text="CPF do Aluno:").pack()
+        cpf_entry = tk.Entry(nova_janela)
+        cpf_entry.pack()
+
+        if aluno:
+            nome_entry.insert(0, aluno["ALUN_NOME"])
+            cpf_entry.insert(0, aluno["ALUN_CPF"])
+
+        def salvar_aluno():
+            nome = nome_entry.get()
+            cpf = cpf_entry.get()
+            if aluno:
+                self.editar_aluno(aluno["ALUN_MATRICULA"], nome, cpf)
+            else:
+                self.salvar_aluno(nome, cpf)
+                # Aqui você pode criar a associação aluno-turma se quiser
+
+            nova_janela.destroy()
+            self.mostrar_alunos(turma)
+
+            tk.Button(nova_janela, text="Salvar", command=salvar_aluno).pack(pady=10)
+        
+        
+
             
-        if self.button_frame:
-            self.button_frame.destroy()
-            
-        self.root.configure(bg="#f0f0f0")
-
-        self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
-        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
-
-        tk.Label(self.main_frame, text="Cadastrar Nova Turma",
-                 font=("Arial", 18, "bold"), bg="#f0f0f0").pack(anchor=tk.W, pady=(0, 30))
-
-        form_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
-        form_frame.pack(fill=tk.BOTH, expand=True, padx=50)
-
-        tk.Label(form_frame, text="Nome da Turma:", font=("Arial", 12),
-                 bg="#f0f0f0").pack(anchor=tk.W)
-        self.nome_entry = tk.Entry(form_frame, font=("Arial", 12))
-        self.nome_entry.pack(anchor=tk.W, pady=(0, 20), fill=tk.X)
-
-        tk.Label(form_frame, text="Matéria:", font=("Arial", 12),
-                 bg="#f0f0f0").pack(anchor=tk.W)
-        self.materia_entry = tk.Entry(form_frame, font=("Arial", 12))
-        self.materia_entry.pack(anchor=tk.W, pady=(0, 30), fill=tk.X)
-
-        button_frame = tk.Frame(form_frame, bg="#f0f0f0")
-        button_frame.pack(fill=tk.X, pady=20)
-
-        tk.Button(button_frame, text="Cancelar", font=("Arial", 12),
-                  bg="#f0f0f0", width=10, command=self.voltar_tela_principal).pack(side=tk.LEFT, padx=(0, 10))
-
-        tk.Button(button_frame, text="Adicionar", font=("Arial", 12),
-                  bg="#4a6fa5", fg="white", width=10, command=self.adicionar_turma).pack(side=tk.LEFT)
-
     def cadastro_de_alunos(self, turma=None):
         if hasattr(self, 'main_frame'):
             self.main_frame.destroy()
@@ -477,7 +527,7 @@ class App:
             btn_salvar.grid(row=4, column=0, padx=10, pady=20)
 
             btn_cancelar = tk.Button(frame, text="Voltar", font=("Arial", 12), bg="#f44336", fg="white",
-                                    command=self.voltar_tela_principal)
+                                    command=self.voltar_tela_alunos)
             btn_cancelar.grid(row=4, column=1, padx=10, pady=20)
 
     def salvar_aluno(self):
@@ -520,7 +570,7 @@ class App:
         
         self.alunos.append({"ALUN_MATRICULA": ALUN_MATRICULA, "ALUN_NOME": ALUN_NOME, "ALUN_CPF": ALUN_CPF})
         
-        self.voltar_tela_principal()
+        self.voltar_tela_alunos()
     
     def adicionar_turma(self):
         TURMA_NOME = self.nome_entry.get().strip()
@@ -612,6 +662,21 @@ class App:
             
             self.voltar_tela_principal()
 
+    def confirmar_exclusao_aluno(self, turma):
+        resposta = messagebox.askyesno("Confirmação", 
+                                       f"Tem certeza que deseja excluir o aluno '{turma['ALUN_NOME']}'?")
+        if resposta:
+            self.excluir_aluno_db(turma["ALUN_MATRICULA"])
+            
+            self.turmas = [t for t in self.turmas if t["ALUN_MATRICULA"] != turma["ALUN_MATRICULA"]]
+            
+            self.voltar_tela_principal()
+
+
     def voltar_tela_principal(self):
         self.root.configure(bg="#f0f0f0")
         self.criar_tela_principal()
+        
+    def voltar_tela_alunos(self):
+        self.root.configure(bg="#f0f0f0")
+        self.criar_tela_alunos()
