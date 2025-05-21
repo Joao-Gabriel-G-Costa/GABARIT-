@@ -113,6 +113,6 @@ class MaterialUsageManager(ctk.CTk):
         atualizar_status_uso(material_id, em_uso)
 
 if __name__ == "__main__":
-    criar_tabela_materiais()  # Chama a função para criar a tabela
+    criar_tabela_materiais()  
     app = MaterialUsageManager()
     app.mainloop()

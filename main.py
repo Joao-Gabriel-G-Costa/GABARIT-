@@ -1,8 +1,8 @@
 from tkinter import *
 import customtkinter as ctk
 from conecta import conectar_ao_banco
-from auth_login import Login
-from frames import Principal  
+from auth.auth_login import Login
+from frames.frames import Principal  
 
 class MainApp(ctk.CTk):
     def __init__(self, *args, **kwargs):

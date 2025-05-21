@@ -2,7 +2,7 @@ import tkinter as tk
 import os
 from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk  
-from materiais import conectar_banco  
+from frames.materiais import conectar_banco  
 
 class VisualizarMateriais:
     def __init__(self, root):

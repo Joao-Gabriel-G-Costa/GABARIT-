@@ -2,8 +2,8 @@ import customtkinter as ctk
 from PIL import Image, ImageTk
 import tkinter as tk
 from pathlib import Path
-from dados_usuario import DadosUsuario
-from relatorios import RelatoriosMateriais  
+from frames.dados_usuario import DadosUsuario
+from frames.relatorios import RelatoriosMateriais  
 
 caminho_imagem = Path("C:/Users/Win10/Downloads/tcc/TCC 27.09/login2.png")
 
@@ -99,7 +99,7 @@ class Principal(ctk.CTkFrame):
             print(f"Erro ao carregar a imagem de fundo: {e}")
 
     def open_vermateriais(self):
-        from vermateriais import VisualizarMateriais
+        from frames.vermateriais import VisualizarMateriais
         janela = tk.Toplevel(self)
         janela.title("Materiais")
         janela.geometry("800x600")
@@ -128,7 +128,7 @@ class Principal(ctk.CTkFrame):
         voltar_button.pack(pady=10)
 
     def voltar_login(self):
-        from auth_login import Login
+        from auth.auth_login import Login
         self.master.switch_frame(Login)
 
     def open_relatorios(self):
@@ -139,7 +139,7 @@ class Principal(ctk.CTkFrame):
             self.relatorios_window.lift() 
 
 def open_recursos():
-    from materiais import CadastroMateriais
+    from frames.materiais import CadastroMateriais
     janela = tk.Toplevel()
     janela.title("Materiais")
     janela.geometry("600x500")
@@ -148,7 +148,7 @@ def open_recursos():
     janela.mainloop()
 
 def open_reservas():
-    from frames_reservas import CalendarApp
+    from frames.frames_reservas import CalendarApp
     janela = tk.Toplevel()
     janela.title("Reservas")
     janela.geometry("600x500")
@@ -157,6 +157,6 @@ def open_reservas():
     janela.mainloop()
 
 def open_verreserva():
-    from verreserva import open_ver_reservas_window
+    from frames.verreserva import open_ver_reservas_window
     usuario_atual = "Usuário Teste"
     open_ver_reservas_window(None, usuario_atual)

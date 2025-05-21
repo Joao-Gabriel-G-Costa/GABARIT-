@@ -3,6 +3,7 @@ from tkinter import ttk, messagebox
 import json
 import os
 import sqlite3
+from frames.provas import Provas
 
 DB_FILE = "BANCOGABARIBOT.db"
 
@@ -22,7 +23,8 @@ class App:
         self.criar_header()
         self.criar_tela_principal()
         self.alunos = []
-        self.nova_janela
+        # Remove the undefined attribute reference
+        # self.nova_janela
 
     def mostrar_alunos(self, turma):
             if hasattr(self, 'main_frame'):
@@ -153,8 +155,6 @@ class App:
         exists = cursor.fetchone() is not None
         conn.close()
         return exists
-
-
     
     def excluir_turma_db(self, TURMA_ID):
         conn = sqlite3.connect(DB_FILE)
@@ -216,7 +216,9 @@ class App:
             self.criar_tela_sem_turmas()
         else:
             self.exibir_lista_turmas()
-            self.adicionar_turma_botao()
+            
+        # Always add the button
+        self.adicionar_turma_botao()
             
     def criar_tela_sem_alunos(self):
         center_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
@@ -242,11 +244,13 @@ class App:
             self.criar_tela_sem_alunos()
         else:
             self.cadastro_de_alunos()
-            self.adicionar_aluno_botao()
+            
+        self.adicionar_aluno_botao()
 
     def adicionar_turma_botao(self):
         if self.button_frame:
             self.button_frame.destroy()
+            
         self.button_frame = tk.Frame(self.root, bg="#f0f0f0")
         self.button_frame.pack(fill=tk.X, padx=20, pady=10)
 
@@ -258,6 +262,7 @@ class App:
     def adicionar_aluno_botao(self):
         if self.button_frame:
             self.button_frame.destroy()
+            
         self.button_frame = tk.Frame(self.root, bg="#f0f0f0")
         self.button_frame.pack(fill=tk.X, padx=20, pady=10)
 
@@ -278,6 +283,42 @@ class App:
         for widget in self.main_frame.winfo_children():
             widget.destroy()
 
+    def abrir_tela_cadastro(self):
+        if hasattr(self, 'main_frame'):
+            self.main_frame.destroy()
+            
+        if self.button_frame:
+            self.button_frame.destroy()
+
+        self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+        tk.Label(self.main_frame, text="Nova Turma",
+                 font=("Arial", 18, "bold"), bg="#f0f0f0").pack(anchor=tk.W, pady=(0, 30))
+
+        form_frame = tk.Frame(self.main_frame, bg="#f0f0f0")
+        form_frame.pack(fill=tk.BOTH, expand=True, padx=50)
+
+        tk.Label(form_frame, text="Nome da Turma:", font=("Arial", 12),
+                 bg="#f0f0f0").pack(anchor=tk.W)
+        self.nome_entry = tk.Entry(form_frame, font=("Arial", 12))
+        self.nome_entry.pack(anchor=tk.W, pady=(0, 20), fill=tk.X)
+
+        tk.Label(form_frame, text="Matéria:", font=("Arial", 12),
+                 bg="#f0f0f0").pack(anchor=tk.W)
+        self.materia_entry = tk.Entry(form_frame, font=("Arial", 12))
+        self.materia_entry.pack(anchor=tk.W, pady=(0, 30), fill=tk.X)
+
+        button_frame = tk.Frame(form_frame, bg="#f0f0f0")
+        button_frame.pack(fill=tk.X, pady=20)
+
+        tk.Button(button_frame, text="Cancelar", font=("Arial", 12),
+                  bg="#f0f0f0", width=10, 
+                  command=self.voltar_tela_principal).pack(side=tk.LEFT, padx=(0, 10))
+
+        tk.Button(button_frame, text="Salvar", font=("Arial", 12),
+                  bg="#4a6fa5", fg="white", width=10, 
+                  command=self.adicionar_turma).pack(side=tk.LEFT)
 
     def exibir_lista_turmas(self):
         titulo_label = tk.Label(self.main_frame, text="Minhas Turmas",
@@ -325,6 +366,7 @@ class App:
 
         row, col = 0, 0
         max_col = 3
+        canvas_width = canvas_width if canvas_width > 0 else 750  # Default value if canvas width is not yet determined
         card_width = canvas_width // max_col - 20  
 
         for i, turma in enumerate(self.turmas):
@@ -425,9 +467,9 @@ class App:
             elif texto == "Alunos": 
                 command = lambda t=turma: self.mostrar_alunos(t)
             elif texto == "Desempenho":
-                command = lambda t=turma: self.confirmar_exclusao_turma(t)
+                command = lambda: messagebox.showinfo("Info", "Função em desenvolvimento")
             elif texto == "Provas":
-                command = lambda t=turma: self.confirmar_exclusao_turma(t)  
+                command = lambda t=turma: self.abrir_tela_provas(t)
 
             btn = tk.Button(sidebar_frame, text=f"{icone} {texto}",
                             font=("Arial", 12), bg="#2e828f", fg="white",
@@ -447,21 +489,23 @@ class App:
         
         options_frame = tk.Frame(content_frame, bg="white")
         options_frame.pack(fill=tk.X, pady=10)
-        
-        # editar_btn = tk.Button(options_frame, text="Editar Turma", 
-        #                      font=("Arial", 11), bg="#333", fg="white",
-        #                      activebackground="#555", activeforeground="white",
-        #                      command=lambda: self.abrir_tela_editar_turma(turma))
-        # editar_btn.pack(side=tk.LEFT, padx=(0, 10))
-        
-        # excluir_btn = tk.Button(options_frame, text="Excluir Turma", 
-        #                       font=("Arial", 11), bg="#333", fg="white",
-        #                       activebackground="#555", activeforeground="white",
-        #                       command=lambda: self.confirmar_exclusao_turma(turma))
-        self.excluir_btn.pack(side=tk.LEFT)
+    
         
         content_main = tk.Frame(content_frame, bg="white")
         content_main.pack(fill=tk.BOTH, expand=True, pady=20)
+
+    def abrir_tela_provas(self, turma):
+        # Crie uma nova janela para as provas
+        nova_janela_provas = tk.Toplevel(self.root)  # Não precisa armazenar em self.nova_janela_provas
+        nova_janela_provas.title(f"Provas - {turma['TURMA_NOME']}")
+
+        # Função de callback para voltar à tela da turma (definida dentro de abrir_tela_provas)
+        def voltar_para_turma():
+            nova_janela_provas.destroy()
+            self.abrir_tela_turma(turma)
+
+        # Instancie a classe Provas, passando a nova janela e o callback
+        Provas(nova_janela_provas, voltar_para_turma) # Não precisa armazenar em self.app_provas
 
     def abrir_tela_cadastro_aluno(self, aluno=None, turma=None):
         nova_janela = tk.Toplevel(self.root)
@@ -485,17 +529,38 @@ class App:
             if aluno:
                 self.editar_aluno(aluno["ALUN_MATRICULA"], nome, cpf)
             else:
-                self.salvar_aluno(nome, cpf)
+                self.salvar_aluno_info(nome, cpf)
                 # Aqui você pode criar a associação aluno-turma se quiser
 
             nova_janela.destroy()
             self.mostrar_alunos(turma)
 
-            tk.Button(nova_janela, text="Salvar", command=salvar_aluno).pack(pady=10)
+        tk.Button(nova_janela, text="Salvar", command=salvar_aluno).pack(pady=10)
         
-        
+    def salvar_aluno_info(self, nome, cpf):
+        # Método para salvar o aluno (renomeado para evitar conflito com outro método)
+        if not nome or not cpf:
+            messagebox.showwarning("Aviso", "Todos os campos são obrigatórios.")
+            return
 
-            
+        try:
+            self.adicionar_aluno_db(nome, cpf)
+            messagebox.showinfo("Sucesso", "Aluno cadastrado com sucesso!")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
+
+    def editar_aluno(self, matricula, nome, cpf):
+        # Implementar a edição de aluno
+        messagebox.showinfo("Info", "Função de edição em desenvolvimento")
+        
+    def excluir_aluno_e_atualizar(self, matricula, turma):
+        # Implementar a exclusão de aluno
+        resposta = messagebox.askyesno("Confirmação", "Tem certeza que deseja excluir este aluno?")
+        if resposta:
+            self.excluir_aluno_db(matricula)
+            messagebox.showinfo("Sucesso", "Aluno excluído com sucesso!")
+            self.mostrar_alunos(turma)
+        
     def cadastro_de_alunos(self, turma=None):
         if hasattr(self, 'main_frame'):
             self.main_frame.destroy()
@@ -503,32 +568,56 @@ class App:
         if self.button_frame:
             self.button_frame.destroy()
 
-            self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
-            self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+        self.main_frame = tk.Frame(self.root, bg="#f0f0f0")
+        self.main_frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
-            frame = tk.Frame(self.main_frame, bg="white", bd=2, relief=tk.GROOVE)
-            frame.pack(pady=20, padx=20)
+        frame = tk.Frame(self.main_frame, bg="white", bd=2, relief=tk.GROOVE)
+        frame.pack(pady=20, padx=20)
 
-            titulo = tk.Label(frame, text="Cadastro de Aluno", font=("Arial", 16, "bold"), bg="white")
-            titulo.grid(row=0, column=0, columnspan=2, pady=10)
+        titulo = tk.Label(frame, text="Cadastro de Aluno", font=("Arial", 16, "bold"), bg="white")
+        titulo.grid(row=0, column=0, columnspan=2, pady=10)
 
-            lbl_nome = tk.Label(frame, text="Nome:", font=("Arial", 12), bg="white")
-            lbl_nome.grid(row=2, column=0, padx=10, pady=5, sticky=tk.E)
-            self.entry_nome = tk.Entry(frame, font=("Arial", 12))
-            self.entry_nome.grid(row=2, column=1, padx=10, pady=5)
+        lbl_nome = tk.Label(frame, text="Nome:", font=("Arial", 12), bg="white")
+        lbl_nome.grid(row=2, column=0, padx=10, pady=5, sticky=tk.E)
+        self.entry_nome = tk.Entry(frame, font=("Arial", 12))
+        self.entry_nome.grid(row=2, column=1, padx=10, pady=5)
 
-            lbl_cpf = tk.Label(frame, text="CPF:", font=("Arial", 12), bg="white")
-            lbl_cpf.grid(row=3, column=0, padx=10, pady=5, sticky=tk.E)
-            self.entry_cpf = tk.Entry(frame, font=("Arial", 12))
-            self.entry_cpf.grid(row=3, column=1, padx=10, pady=5)
+        lbl_cpf = tk.Label(frame, text="CPF:", font=("Arial", 12), bg="white")
+        lbl_cpf.grid(row=3, column=0, padx=10, pady=5, sticky=tk.E)
+        self.entry_cpf = tk.Entry(frame, font=("Arial", 12))
+        self.entry_cpf.grid(row=3, column=1, padx=10, pady=5)
 
-            btn_salvar = tk.Button(frame, text="Salvar", font=("Arial", 12), bg="#4CAF50", fg="white",
-                                command=self.salvar_aluno)
-            btn_salvar.grid(row=4, column=0, padx=10, pady=20)
+        btn_salvar = tk.Button(frame, text="Salvar", font=("Arial", 12), bg="#4CAF50", fg="white",
+                            command=self.salvar_aluno)
+        btn_salvar.grid(row=4, column=0, padx=10, pady=20)
 
-            btn_cancelar = tk.Button(frame, text="Voltar", font=("Arial", 12), bg="#f44336", fg="white",
-                                    command=self.voltar_tela_alunos)
-            btn_cancelar.grid(row=4, column=1, padx=10, pady=20)
+        btn_cancelar = tk.Button(frame, text="Voltar", font=("Arial", 12), bg="#f44336", fg="white",
+                                command=self.voltar_tela_alunos)
+        btn_cancelar.grid(row=4, column=1, padx=10, pady=20)
+
+    def salvar_aluno(self):
+        nome = self.entry_nome.get().strip()
+        cpf = self.entry_cpf.get().strip()
+
+        if not nome or not cpf:
+            messagebox.showwarning("Aviso", "Todos os campos são obrigatórios.")
+            return
+
+        conn = sqlite3.connect(DB_FILE)
+        cursor = conn.cursor()
+
+        try:
+            cursor.execute("INSERT INTO ALUNO (ALUN_NOME, ALUN_CPF) VALUES (?, ?)",
+                        (nome, cpf))
+            conn.commit()
+            messagebox.showinfo("Sucesso", "Aluno cadastrado com sucesso!")
+            self.criar_tela_alunos()
+        except sqlite3.IntegrityError:
+            messagebox.showerror("Erro", "Já existe um aluno com essa matrícula ou CPF.")
+        except Exception as e:
+            messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
+        finally:
+            conn.close()
 
     def salvar_aluno(self):
         nome = self.entry_nome.get().strip()
@@ -671,8 +760,7 @@ class App:
             self.turmas = [t for t in self.turmas if t["ALUN_MATRICULA"] != turma["ALUN_MATRICULA"]]
             
             self.voltar_tela_principal()
-
-
+    
     def voltar_tela_principal(self):
         self.root.configure(bg="#f0f0f0")
         self.criar_tela_principal()

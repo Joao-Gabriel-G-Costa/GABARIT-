@@ -1,14 +1,15 @@
 import customtkinter as ctk
-from conecta import conectar_ao_banco
-from auth_login import Login
-from utilidades import contar_espacos, contar_letras
-import mysql.connector
+import sqlite3
+from auth.auth_login import Login
+from frames.utilidades import contar_espacos, contar_letras
 import random
 import string
 import logging
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+
+DB_FILE = "BANCOGABARIBOT.db"
 
 logging.basicConfig(level=logging.INFO)
 
@@ -69,6 +70,22 @@ class EsqueciSenha(ctk.CTkFrame):
         self.mensagem = ctk.CTkLabel(self.frame_botoes, text="", font=self.fontePadrao, fg_color="transparent")
         self.mensagem.pack(pady=(10, 0))
 
+    def get_db_connection(self):
+        """Cria uma conexão com o banco de dados SQLite"""
+        conn = sqlite3.connect(DB_FILE)
+        conn.row_factory = sqlite3.Row  
+        return conn
+    
+    def handle_enviar_email(self):
+        self.email = self.emailEntry.get()
+        
+        if not self.email:
+            self.mensagem.configure(text="Por favor, insira um e-mail.")
+            return
+        
+        self.enviar_codigo(self)
+        
+
     def enviar_codigo(self):
         self.email = self.emailEntry.get()
         
@@ -77,27 +94,29 @@ class EsqueciSenha(ctk.CTkFrame):
             return
 
         try:
-            cursor = self.master.db.cursor()
-            cursor.execute("SELECT usu_email FROM usuario WHERE usu_email = %s", (self.email,))
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT PROF_EMAIL FROM PROFESSOR WHERE PROF_EMAIL = ?", (self.email,))
             resultado = cursor.fetchone()
 
             if resultado:
                 self.verification_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-                if self.enviar_email(self.email, self.verification_code):  # Usando smtplib
+                if self.enviar_email(self.email, self.verification_code):
                     self.mensagem.configure(text="Código de verificação enviado para o e-mail.")
                 else:
                     self.mensagem.configure(text="Erro ao enviar e-mail. Por favor, tente novamente.")
             else:
                 self.mensagem.configure(text="E-mail não encontrado no banco de dados.")
-        except mysql.connector.Error as err:
+        except sqlite3.Error as err:
             self.mensagem.configure(text=f"Erro ao verificar o e-mail: {err}")
             logging.error(f"Erro no banco de dados: {err}")
         finally:
             cursor.close()
+            conn.close()
 
     def enviar_email(self, destinatario, codigo):
         remetente = 'tccsesisenai@gmail.com'  
-        senha = 'qaajwknbyyolgctk' 
+        senha = 'tjrp fkjv hcrk ysoq' 
 
         # Criação da mensagem
         mensagem = MIMEMultipart()
@@ -200,7 +219,7 @@ class EsqueciSenha(ctk.CTkFrame):
         </html>
         """
 
-        mensagem.attach(MIMEText(corpo_email, 'html'))  # Alterado para 'html'
+        mensagem.attach(MIMEText(corpo_email, 'html'))
 
         try:
             with smtplib.SMTP('smtp.gmail.com', 587) as servidor:
@@ -239,14 +258,25 @@ class EsqueciSenha(ctk.CTkFrame):
             self.mensagem.configure(text="A senha deve ter pelo menos 8 caracteres e não deve conter espaços.")
             return
 
-        cursor = self.master.db.cursor()
         try:
-            cursor.execute("UPDATE usuario SET usu_senha = %s WHERE usu_email = %s", (nova_senha, self.email))
-            self.master.db.commit()
-            self.mensagem.configure(text="Senha redefinida com sucesso.")
-            self.master.switch_frame(Login)
-        except mysql.connector.Error as err:
+            conn = self.get_db_connection()
+            cursor = conn.cursor()
+            # Atualiza a senha do professor usando o email
+            cursor.execute("UPDATE PROFESSOR SET PROF_SENHA = ? WHERE PROF_EMAIL = ?", (nova_senha, self.email))
+            conn.commit()
+            
+            # Verifica se alguma linha foi afetada
+            if cursor.rowcount > 0:
+                self.mensagem.configure(text="Senha redefinida com sucesso.")
+                self.master.switch_frame(Login)
+            else:
+                self.mensagem.configure(text="Nenhuma alteração realizada. Verifique o e-mail.")
+        except sqlite3.Error as err:
             self.mensagem.configure(text=f"Erro ao redefinir senha: {err}")
+            logging.error(f"Erro no banco de dados: {err}")
+        finally:
+            cursor.close()
+            conn.close()
 
     def retorno(self):
         self.master.switch_frame(Login)

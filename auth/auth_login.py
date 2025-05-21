@@ -1,4 +1,5 @@
 import customtkinter as ctk
+from customtkinter import CTkImage
 from conecta import *  
 from PIL import Image, ImageTk
 from pathlib import Path
@@ -15,15 +16,14 @@ class Login(ctk.CTkFrame):
         self.frame_direita = ctk.CTkFrame(self, width=300)
         self.frame_direita.pack(side="right", fill="both", expand=True)
 
-        caminho_imagem = Path("C:/Users/Win10/Documents/GitHub/GABARIT-/Gabaribot.png") #alterar foto principal
-        
+        caminho_imagem = Path(__file__).resolve().parent.parent / "assets" / "gabarito.jpeg"
+
         try:
-            self.imagem = Image.open(caminho_imagem)  
-            self.imagem_resized = self.imagem.resize((650, 650))
-            self.img_tk = ImageTk.PhotoImage(self.imagem_resized)
+            imagem_pil = Image.open(caminho_imagem)
+            self.img_tk = CTkImage(light_image=imagem_pil, size=(650, 650))
 
             self.label_imagem = ctk.CTkLabel(self.frame_esquerda, image=self.img_tk, text="")
-            self.label_imagem.pack(expand=True) 
+            self.label_imagem.pack(expand=True)
         except Exception as e:
             print(f"Erro ao carregar a imagem: {e}")
 
@@ -76,11 +76,9 @@ class Login(ctk.CTkFrame):
         usuario = self.usuario.get()
         senha = self.senha.get()
         try:
-            # Conectar ao banco SQLite
-            conn = sqlite3.connect('BANCOGABARIBOT.db')  # Caminho do banco SQLite
+            conn = sqlite3.connect('BANCOGABARIBOT.db')  
             cursor = conn.cursor()
 
-            # Realizar consulta no banco
             cursor.execute("SELECT PROF_SENHA FROM PROFESSOR WHERE PROF_USU = ?", (usuario,))
             resultado = cursor.fetchone()
 
@@ -98,9 +96,9 @@ class Login(ctk.CTkFrame):
                 conn.close()
 
     def abrir_tela_cadastro(self):
-        from auth_cadastro import Cadastro 
+        from auth.auth_cadastro import Cadastro 
         self.master.switch_frame(Cadastro)
 
     def esqueciSenha(self):
-        from auth_esqueci_senha import EsqueciSenha  
+        from auth.auth_esqueci_senha import EsqueciSenha  
         self.master.switch_frame(EsqueciSenha)
