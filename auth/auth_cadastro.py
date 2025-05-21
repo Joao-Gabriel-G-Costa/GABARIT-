@@ -1,7 +1,7 @@
 import customtkinter as ctk
 from conecta import conectar_ao_banco
-from auth_login import *
-from utilidades import *
+from auth.auth_login import *
+from frames.utilidades import *
 
 class Cadastro(ctk.CTkFrame):
     def __init__(self, master):
