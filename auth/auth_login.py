@@ -16,7 +16,7 @@ class Login(ctk.CTkFrame):
         self.frame_direita = ctk.CTkFrame(self, width=300)
         self.frame_direita.pack(side="right", fill="both", expand=True)
 
-        caminho_imagem = Path(__file__).resolve().parent.parent / "assets" / "gabarito.jpeg"
+        caminho_imagem = Path(__file__).resolve().parent.parent / "assets" / "gabarito.png"
 
         try:
             imagem_pil = Image.open(caminho_imagem)
